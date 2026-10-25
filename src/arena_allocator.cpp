@@ -3,9 +3,14 @@
 #include <new>
 #include <stdexcept>
 #include <memory>
+#include <utility>
 #include <cstddef>
 
-ArenaAllocator::ArenaAllocator(std::size_t capacity) : buffer_(nullptr), capacity_(capacity), offset_(0){
+ArenaAllocator::ArenaAllocator(std::size_t capacity) 
+    : buffer_(nullptr), 
+      capacity_(capacity), 
+      offset_(0),
+      used_bytes_(0) {
     if (capacity == 0) {
         throw std::invalid_argument(
             "Arena capacity must be greater than zero"
@@ -30,7 +35,7 @@ ArenaAllocator::~ArenaAllocator()
 
 void* ArenaAllocator::allocate(
     std::size_t size,
-    std::size_t alignment = alignof(std::max_align_t)
+    std::size_t alignment
 ) {
     if (size == 0) {
         return nullptr;
@@ -61,5 +66,23 @@ void* ArenaAllocator::allocate(
         result - buffer_
     ) + size;
 
+    used_bytes_ += size;
     return result;
+}
+
+void ArenaAllocator::reset() {
+    offset_ = 0;
+    used_bytes_ = 0;
+}
+
+std::size_t ArenaAllocator::capacity() const noexcept {
+    return capacity_;
+}
+
+std::size_t ArenaAllocator::offset() const noexcept {
+    return offset_;
+}
+
+std::size_t ArenaAllocator::used_bytes() const noexcept {
+    return used_bytes_;
 }
